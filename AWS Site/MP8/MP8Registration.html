@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+    <head>    
+        <script src="https://sdk.amazonaws.com/js/aws-sdk-2.2.18.min.js"></script>
+        <!-- Bootstrap core CSS -->
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="carousel.css" rel="stylesheet">
+    <title>Registration</title>
+    </head>
+    
+<body>
+    <div class="navbar-wrapper">
+
+
+            <nav class="navbar navbar-inverse navbar-static-top">
+                <div class="container">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <a class="navbar-brand" href="MP8Home.html">Andre's MP8 Website</a>
+                    </div>
+                    <div id="navbar" class="navbar-collapse collapse">
+                        <ul class="nav navbar-nav">
+                            <li><a href="MP8Home.html">Home</a></li>
+                            <li><a href="MP8FBLogin.html">Login with Facebook</a></li>
+                            <li class="active"><a href="MP8Registration.html">Registration</a></li>
+                            <li class="dropdown">
+                                <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Dropdown <span class="caret"></span></a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="MP8ProfilePage.html">Profile Page</a></li>
+                                    
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+    </div>
+   <!-- content here -->
+   
+   
+
+      
+   <div class="container">
+       <h1>Registration Page</h1>
+       <div id ="alertDiv"> </div>
+       <div id="status"></div>
+       <p> Email: <input id="email" type="email"></p>
+       <p> Full name: <input id="name" type="text"></p>
+       <p> <input type="file" id="file-chooser" />
+           <button id="upload" >Upload Profile Picture</button>
+       </p>
+       <div id="results">
+          
+       </div>
+       <button onclick="myFunction()">Submit</button>
+   </div>
+  
+   
+   
+    <script>
+        //all js in here
+        var fbUserId;
+        var roleArn = 'arn:aws:iam::922934335731:role/cis311AccessRole'; //from AWS IAM
+        var appId = '287094508445749'; //from facebook
+	
+        function myFunction()
+        {
+            var emailText = document.getElementById("email").value;
+            var pattern =  /^[a-zA-Z0-9\-_]+(\.[a-zA-Z0-9\-_]+)*@[a-z0-9]+(\-[a-z0-9]+)*(\.[a-z0-9]+(\-[a-z0-9]+)*)*\.[a-z]{2,4}$/;
+            var emails = {email: "" };
+            var alertBanner = document.getElementById("alertDiv");
+            if(pattern.test(emailText))
+            {
+                
+                alertBanner.setAttribute("class", "alert alert-success")
+                document.getElementById("alertDiv").innerHTML = "<strong> Registration successful with: </strong>" + emailText;
+                emails.email = emailText;
+                put(emailText);
+               
+                return true;
+            }
+            else
+            {
+                alertBanner.setAttribute("class", "alert alert-danger")
+                document.getElementById("alertDiv").innerHTML = "<strong> Bad email address: </strong>" + emailText;
+                return false;
+            }
+            
+            
+        }
+ 
+            //var roleArn = 'arn:aws:iam::922934335731:role/cis311AccessRole'; //from AWS IAM
+            //var appId = '287094508445749'; //from facebook
+            // This is called with the results from from FB.getLoginStatus().
+            function statusChangeCallback(response) {
+                console.log('statusChangeCallback');
+                console.log(response);
+                // The response object is returned with a status field that lets the
+                // app know the current login status of the person.
+                // Full docs on the response object can be found in the documentation
+                // for FB.getLoginStatus().
+                if (response.status === 'connected') {
+                    // Logged into your app and Facebook.
+                    AWS.config.credentials = new AWS.WebIdentityCredentials({ //WIF
+                                                                            RoleArn: roleArn,
+                                                                            ProviderId: 'graph.facebook.com',
+                                                                            WebIdentityToken: response.authResponse.accessToken
+                                                                            });
+                    bucket.config.credentials = new AWS.WebIdentityCredentials({ //WIF
+						ProviderId: 'graph.facebook.com',
+						RoleArn: roleArn,
+						WebIdentityToken: response.authResponse.accessToken
+						});
+                    //createUIForCRUD();
+                    fbUserId = response.authResponse.userID;
+                    testAPI();
+                } else if (response.status === 'not_authorized') {
+                    // The person is logged into Facebook, but not your app.
+                    document.getElementById('status').innerHTML = 'Please log ' +
+                    'into this app.';
+                } else {
+                    // The person is not logged into Facebook, so we're not sure if
+                    // they are logged into this app or not.
+                    document.getElementById('status').innerHTML = 'Please log ' +
+                    'into Facebook.';
+                }
+            }
+        
+        
+        // This function is called when someone finishes with the Login
+        // Button.  See the onlogin handler attached to it in the sample
+        // code below.
+        function checkLoginState()
+        {
+            FB.getLoginStatus(function(response) {
+                              statusChangeCallback(response);
+                              });
+        }
+        
+        window.fbAsyncInit = function()
+        {
+            FB.init({
+                    appId      : appId,
+                    cookie     : true,  // enable cookies to allow the server to access
+                    // the session
+                    xfbml      : true,  // parse social plugins on this page
+                    version    : 'v2.8' // use graph api version 2.8
+                    });
+                    
+                    // Now that we've initialized the JavaScript SDK, we call
+                    // FB.getLoginStatus().  This function gets the state of the
+                    // person visiting this page and can return one of three states to
+                    // the callback you provide.  They can be:
+                    //
+                    // 1. Logged into your app ('connected')
+                    // 2. Logged into Facebook, but not your app ('not_authorized')
+                    // 3. Not logged into Facebook and can't tell if they are logged into
+                    //    your app or not.
+                    //
+                    // These three cases are handled in the callback function.
+                    
+                    FB.getLoginStatus(function(response) {
+                                      statusChangeCallback(response);
+                                      });
+                                      
+        };
+        
+        // Load the SDK asynchronously
+        (function(d, s, id)
+         {
+         var js, fjs = d.getElementsByTagName(s)[0];
+         if (d.getElementById(id)) return;
+         js = d.createElement(s); js.id = id;
+         js.src = "//connect.facebook.net/en_US/sdk.js";
+         fjs.parentNode.insertBefore(js, fjs);
+         }(document, 'script', 'facebook-jssdk'));
+         
+         // Here we run a very simple test of the Graph API after login is
+         // successful.  See statusChangeCallback() for when this call is made.
+         function testAPI() {
+             console.log('Welcome!  Fetching your information.... ');
+             FB.api('/me', function(response) {
+                    console.log('Successful login for: ' + response.name);
+                    document.getElementById('status').innerHTML =
+                    'Thanks for logging in, ' + response.name + '!';
+                    });
+         }
+        
+                   
+            var bucketName = "andre-cis311bucket"; //CHANGE TO YOUR S3 BUCKET NAME
+            AWS.config.region = 'us-east-1'; //VERIFY YOUR S3 BUCKET REGION
+
+            var bucket = new AWS.S3({
+				params: {
+				Bucket: bucketName
+				}
+				});
+			var fileChooser = document.getElementById('file-chooser');
+			var button = document.getElementById('upload');
+			var results = document.getElementById('results');
+			
+			button.addEventListener('click', function () {
+				var file = fileChooser.files[0];
+				if (file) {
+					results.innerHTML = '';
+					//Object key will be facebook-USERID#/FILE_NAME
+					var objKey = 'facebook-' + fbUserId + '/' + file.name;
+                                        document.cookie = 'picture' +  '=' + 'facebook-' + fbUserId + '/' + file.name;
+                                        document.cookie = "name=test";
+                                        console.log(document.cookie);
+					var params = {
+						Key: objKey,
+						ContentType: file.type,
+						Body: file,
+						ACL: 'public-read'
+						};
+					bucket.putObject(params, function (err, data) {
+						if (err) {
+							results.innerHTML = 'ERROR: ' + err;
+						} else {
+                                                    results.innerHTML = 'Upload complete';
+						}
+						});
+				} else {
+					results.innerHTML = 'Nothing to upload.';
+				}
+				}, false);
+			
+        
+        
+ 
+            //var fbUserId;
+            var params;
+            var keyText;
+           
+            var nameText;
+            var dynamodb = null;
+            var docClient = null;
+            //var appId = '287094508445749'; //from facebook
+            //var roleArn = 'arn:aws:iam::922934335731:role/cis311AccessRole'; //from AWS IAM
+            var resultData = null;
+            
+                function put(emailText) {
+                dynamodb = new AWS.DynamoDB({ region: 'us-east-2' });
+                docClient = new AWS.DynamoDB.DocumentClient({ service: dynamodb });
+                keyText = emailText;
+                nameText = document.getElementById("name").value;
+                console.log("Email Value: ", keyText);
+                console.log("Name Value: ", nameText);
+                params = {
+                    TableName: 'cis311CRUDTable',
+                    Item: {
+                        itemID: fbUserId,
+                        attribute1: nameText,
+                        attribute2: keyText
+                    }
+                };
+                docClient.put(params, function(err, data){
+                              if (err) console.log(err);
+                              else
+                              {
+                              resultData = data;
+                              
+                              console.log(resultData);
+                              window.location.assign("./MP8Home.html");
+                              }
+                              })
+                              
+                              
+            };
+            
+            
+ 
+            
+            
+    </script>
+    
+    
+    
+            <!-- Bootstrap core JavaScript
+         ================================================== -->
+        <!-- Placed at the end of the document so the pages load faster -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
+        <script src="./js/bootstrap.min.js"></script>
+        <!-- Just to make our placeholder images work. Don't actually copy the next line! -->
+        <script src="./js/vendor/holder.min.js"></script>
+        <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+        <script src="./assets/js/ie10-viewport-bug-workaround.js"></script>
+    
+</body>
+</html>
